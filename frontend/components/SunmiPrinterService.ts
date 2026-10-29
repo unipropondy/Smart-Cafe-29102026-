@@ -658,21 +658,77 @@ class SunmiPrinterService {
         await SunmiModule.printText(formatter.divider("-"));
       }
 
-      // ============ GRAND TOTAL ============
-      await SunmiModule.printText(formatter.twoCols("GRAND TOTAL:", `${symbol}${finalTotal.toFixed(2)}`));
-      await SunmiModule.printText(formatter.doubleDivider("="));
-
       // ============ PAYMENT ============
+      let hasCashPayment = false;
+      let totalCashReceived = 0;
+      let totalChangeReturn = 0;
+
+      if (!saleData.isCheckout) {
+        await SunmiModule.printText(formatter.divider("-"));
+        if (saleData.payments && Array.isArray(saleData.payments) && saleData.payments.length > 0) {
+          for (const p of saleData.payments) {
+            let mode = String(p.payMode || p.payModeName || p.Remarks || "Payment");
+            if (mode.toUpperCase().trim() === "FOC") mode = "FOC (Discount)";
+            const mUpper = mode.toUpperCase().trim();
+            const isCash = mUpper === "CASH" || mUpper === "CAS" || mUpper.includes("CASH");
+            const displayLabel = isCash ? "Cash:" : `${mode}:`;
+            await SunmiModule.printText(formatter.twoCols(displayLabel, `${symbol}${parseFloat(p.amount).toFixed(2)}`));
+
+            if (isCash) {
+              hasCashPayment = true;
+              const pAmt = parseFloat(p.amount) || 0;
+              const cashRec = (saleData.cashReceived !== undefined && saleData.cashReceived !== null && Number(saleData.cashReceived) > 0)
+                ? Number(saleData.cashReceived)
+                : (saleData.cashPaid !== undefined && saleData.cashPaid !== null && Number(saleData.cashPaid) > 0)
+                  ? Number(saleData.cashPaid)
+                  : pAmt;
+              const changeRet = (saleData.changeReturn !== undefined && saleData.changeReturn !== null)
+                ? Number(saleData.changeReturn)
+                : (saleData.change !== undefined && saleData.change !== null)
+                  ? Number(saleData.change)
+                  : Math.max(0, cashRec - pAmt);
+              totalCashReceived = cashRec;
+              totalChangeReturn = changeRet;
+            }
+          }
+        } else {
+          const mode = String(saleData.paymentMethod || "Cash").toUpperCase().trim();
+          const isCash = mode === "CASH" || mode === "CAS" || mode.includes("CASH");
+          const displayLabel = isCash ? "Cash:" : `${saleData.paymentMethod || "Payment"}:`;
+          await SunmiModule.printText(formatter.twoCols(displayLabel, `${symbol}${finalTotal.toFixed(2)}`));
+
+          if (isCash) {
+            hasCashPayment = true;
+            const totAmt = parseFloat(finalTotal) || 0;
+            const cashRec = (saleData.cashReceived !== undefined && saleData.cashReceived !== null && Number(saleData.cashReceived) > 0)
+              ? Number(saleData.cashReceived)
+              : (saleData.cashPaid !== undefined && saleData.cashPaid !== null && Number(saleData.cashPaid) > 0)
+                ? Number(saleData.cashPaid)
+                : totAmt;
+            const changeRet = (saleData.changeReturn !== undefined && saleData.changeReturn !== null)
+              ? Number(saleData.changeReturn)
+              : (saleData.change !== undefined && saleData.change !== null)
+                ? Number(saleData.change)
+                : Math.max(0, cashRec - totAmt);
+            totalCashReceived = cashRec;
+            totalChangeReturn = changeRet;
+          }
+        }
+        await SunmiModule.printText(formatter.divider("-"));
+      }
+
+      // ============ TOTAL ============
       if (saleData.isCheckout) {
+        await SunmiModule.printText(formatter.twoCols("TOTAL:", `${symbol}${finalTotal.toFixed(2)}`));
+        await SunmiModule.printText(formatter.divider("-"));
         await SunmiModule.printText(formatter.center("PAYMENT STATUS: PENDING"));
       } else {
-        await SunmiModule.printText(formatter.twoCols("PAYMENT:", saleData.paymentMethod || "Cash"));
+        await SunmiModule.printText(formatter.twoCols("TOTAL:", `${symbol}${finalTotal.toFixed(2)}`));
+        await SunmiModule.printText(formatter.divider("-"));
 
-        if (saleData.cashPaid && saleData.cashPaid > 0) {
-          await SunmiModule.printText(formatter.twoCols("PAID:", `${symbol}${saleData.cashPaid.toFixed(2)}`));
-          if (saleData.change && saleData.change > 0) {
-            await SunmiModule.printText(formatter.twoCols("CHANGE:", `${symbol}${saleData.change.toFixed(2)}`));
-          }
+        if (hasCashPayment) {
+          await SunmiModule.printText(formatter.twoCols("Cash Received:", `${symbol}${totalCashReceived.toFixed(2)}`));
+          await SunmiModule.printText(formatter.twoCols("Change Return:", `${symbol}${totalChangeReturn.toFixed(2)}`));
         }
       }
 

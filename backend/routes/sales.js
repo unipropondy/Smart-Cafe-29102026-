@@ -3122,6 +3122,18 @@ router.post("/save", async (req, res) => {
 
     }, { name: "SaveSale", timeoutMs: 60000 });
 
+    // 🚀 EMIT REALTIME WEBSOCKET EVENTS ONLY AFTER TRANSACTION COMMIT
+    const io = req.app.get("io");
+    if (io && pendingSocketEvents.length > 0) {
+      for (const item of pendingSocketEvents) {
+        try {
+          io.emit(item.event, item.data);
+        } catch (emitErr) {
+          console.warn(`[Socket Emit Warning] Failed to emit ${item.event}:`, emitErr.message);
+        }
+      }
+    }
+
     // 🚀 POST-SAVE VALIDATION: Deep integrity check for Backoffice compatibility
     if (guidOrderId) {
       setImmediate(async () => {

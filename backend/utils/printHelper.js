@@ -445,22 +445,76 @@ function formatReceiptThermalText(saleData, companySettings = {}, discountInfo =
     text += "[L]------------------------------------------------\n";
   }
 
-  text += "[L]<B>Payment Details:</B>\n";
+  // Payment mode & Cash tender tracking
+  let hasCashPayment = false;
+  let totalCashReceived = 0;
+  let totalChangeReturn = 0;
+
+  if (!text.endsWith("[L]------------------------------------------------\n")) {
+    text += "[L]------------------------------------------------\n";
+  }
+
   if (payments.length > 0) {
     payments.forEach((p) => {
       let modeText = String(p.payMode || p.payModeName || p.Remarks || "Payment");
       if (modeText.toUpperCase().trim() === "FOC") modeText = "FOC (Discount)";
+      const mUpper = modeText.toUpperCase().trim();
+      const isCash = mUpper === "CASH" || mUpper === "CAS" || mUpper.includes("CASH");
+      const displayLabel = isCash ? "Cash:" : `${modeText}:`;
       const amountVal = `${symbol}${parseFloat(p.amount || p.Amount || finalTotal).toFixed(2)}`;
-      text += formatTwoCols48(`<B>  ${modeText}</B>`, `<B>${amountVal}</B>`);
+      text += formatTwoCols48(`<B>${displayLabel}</B>`, `<B>${amountVal}</B>`);
+
+      if (isCash) {
+        hasCashPayment = true;
+        const pAmt = parseFloat(p.amount || p.Amount || finalTotal) || 0;
+        const cashRec = (saleData.cashReceived !== undefined && saleData.cashReceived !== null && Number(saleData.cashReceived) > 0)
+          ? Number(saleData.cashReceived)
+          : (saleData.cashPaid !== undefined && saleData.cashPaid !== null && Number(saleData.cashPaid) > 0)
+            ? Number(saleData.cashPaid)
+            : pAmt;
+        const changeRet = (saleData.changeReturn !== undefined && saleData.changeReturn !== null)
+          ? Number(saleData.changeReturn)
+          : (saleData.change !== undefined && saleData.change !== null)
+            ? Number(saleData.change)
+            : Math.max(0, cashRec - pAmt);
+        totalCashReceived = cashRec;
+        totalChangeReturn = changeRet;
+      }
     });
   } else {
     const methodText = String(saleData.paymentMethod || saleData.payMode || "Payment");
+    const mUpper = methodText.toUpperCase().trim();
+    const isCash = mUpper === "CASH" || mUpper === "CAS" || mUpper.includes("CASH");
+    const displayLabel = isCash ? "Cash:" : `${methodText}:`;
     const amountVal = `${symbol}${parseFloat(finalTotal).toFixed(2)}`;
-    text += formatTwoCols48(`<B>  ${methodText}</B>`, `<B>${amountVal}</B>`);
+    text += formatTwoCols48(`<B>${displayLabel}</B>`, `<B>${amountVal}</B>`);
+
+    if (isCash) {
+      hasCashPayment = true;
+      const totAmt = parseFloat(finalTotal) || 0;
+      const cashRec = (saleData.cashReceived !== undefined && saleData.cashReceived !== null && Number(saleData.cashReceived) > 0)
+        ? Number(saleData.cashReceived)
+        : (saleData.cashPaid !== undefined && saleData.cashPaid !== null && Number(saleData.cashPaid) > 0)
+          ? Number(saleData.cashPaid)
+          : totAmt;
+      const changeRet = (saleData.changeReturn !== undefined && saleData.changeReturn !== null)
+        ? Number(saleData.changeReturn)
+        : (saleData.change !== undefined && saleData.change !== null)
+          ? Number(saleData.change)
+          : Math.max(0, cashRec - totAmt);
+      totalCashReceived = cashRec;
+      totalChangeReturn = changeRet;
+    }
   }
   text += "[L]------------------------------------------------\n";
 
   text += `[R]<font size='big'><B>TOTAL: ${symbol}${finalTotal.toFixed(2)}</B></font>\n`;
+  text += "[L]------------------------------------------------\n";
+
+  if (hasCashPayment) {
+    text += formatTwoCols48(`<B>Cash Received:</B>`, `<B>${symbol}${totalCashReceived.toFixed(2)}</B>`);
+    text += formatTwoCols48(`<B>Change Return:</B>`, `<B>${symbol}${totalChangeReturn.toFixed(2)}</B>`);
+  }
 
   // 💳 NETS Transaction Info (Section 2 of UAT Certification Requirements)
   if (saleData.receiptText || saleData.netsInfo) {

@@ -1727,6 +1727,10 @@ export default function QuickServePOSScreen() {
         date: new Date(),
         isCheckout: false, // ✅ Completed Payment Receipt (NOT 'PAYMENT PENDING')
         isQuickServe: true,
+        cashPaid: finalTotal,
+        cashReceived: finalTotal,
+        change: 0,
+        changeReturn: 0,
       };
 
       // 🚀 ASYNCHRONOUS FIRE-AND-FORGET PRINTING & TABLE REFRESH

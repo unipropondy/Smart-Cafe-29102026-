@@ -2172,36 +2172,81 @@ class UniversalPrinter {
     if (printedRoundOff && printedRoundOff !== 0) {
       const roSign = printedRoundOff > 0 ? "+" : "";
       text += this.formatTwoCols48("<B>Round Off:</B>", `<B>${roSign}${symbol}${printedRoundOff.toFixed(2)}</B>`);
-      text += "[L]------------------------------------------------\n";
     }
 
-    // Payment Details (only print on settled receipts, hide on checkout bills)
+    // Payment mode & Cash tender tracking
+    let hasCashPayment = false;
+    let totalCashReceived = 0;
+    let totalChangeReturn = 0;
+
     if (!isCheckout) {
       if (!text.endsWith("[L]------------------------------------------------\n")) {
         text += "[L]------------------------------------------------\n";
       }
       if (saleData.payments && Array.isArray(saleData.payments) && saleData.payments.length > 0) {
-        text += "[L]<B>Payment Details:</B>\n";
         saleData.payments.forEach((p: any) => {
           let modeText = String(p.payMode || p.payModeName || p.Remarks || "Payment");
           if (modeText.toUpperCase().trim() === "FOC") modeText = "FOC (Discount)";
-          const modeLabel = `  ${modeText}`;
+          const mUpper = modeText.toUpperCase().trim();
+          const isCash = mUpper === "CASH" || mUpper === "CAS" || mUpper.includes("CASH");
+          const displayLabel = isCash ? "Cash:" : `${modeText}:`;
           const amountVal = `${symbol}${parseFloat(p.amount).toFixed(2)}`;
-          text += this.formatTwoCols48(`<B>${modeLabel}</B>`, `<B>${amountVal}</B>`);
+          text += this.formatTwoCols48(`<B>${displayLabel}</B>`, `<B>${amountVal}</B>`);
+
+          if (isCash) {
+            hasCashPayment = true;
+            const pAmt = parseFloat(p.amount) || 0;
+            const cashRec = (saleData.cashReceived !== undefined && saleData.cashReceived !== null && Number(saleData.cashReceived) > 0)
+              ? Number(saleData.cashReceived)
+              : (saleData.cashPaid !== undefined && saleData.cashPaid !== null && Number(saleData.cashPaid) > 0)
+                ? Number(saleData.cashPaid)
+                : pAmt;
+            const changeRet = (saleData.changeReturn !== undefined && saleData.changeReturn !== null)
+              ? Number(saleData.changeReturn)
+              : (saleData.change !== undefined && saleData.change !== null)
+                ? Number(saleData.change)
+                : Math.max(0, cashRec - pAmt);
+            totalCashReceived = cashRec;
+            totalChangeReturn = changeRet;
+          }
         });
         text += "[L]------------------------------------------------\n";
       } else {
         let methodText = String(saleData.paymentMethod || "Payment");
         if (methodText.toUpperCase().trim() === "FOC") methodText = "FOC (Discount)";
-        const methodLabel = `  ${methodText}`;
+        const mUpper = methodText.toUpperCase().trim();
+        const isCash = mUpper === "CASH" || mUpper === "CAS" || mUpper.includes("CASH");
+        const displayLabel = isCash ? "Cash:" : `${methodText}:`;
         const amountVal = `${symbol}${parseFloat(finalTotal).toFixed(2)}`;
-        text += this.formatTwoCols48(`<B>${methodLabel}</B>`, `<B>${amountVal}</B>`);
+        text += this.formatTwoCols48(`<B>${displayLabel}</B>`, `<B>${amountVal}</B>`);
         text += "[L]------------------------------------------------\n";
+
+        if (isCash) {
+          hasCashPayment = true;
+          const totAmt = parseFloat(finalTotal) || 0;
+          const cashRec = (saleData.cashReceived !== undefined && saleData.cashReceived !== null && Number(saleData.cashReceived) > 0)
+            ? Number(saleData.cashReceived)
+            : (saleData.cashPaid !== undefined && saleData.cashPaid !== null && Number(saleData.cashPaid) > 0)
+              ? Number(saleData.cashPaid)
+              : totAmt;
+          const changeRet = (saleData.changeReturn !== undefined && saleData.changeReturn !== null)
+            ? Number(saleData.changeReturn)
+            : (saleData.change !== undefined && saleData.change !== null)
+              ? Number(saleData.change)
+              : Math.max(0, cashRec - totAmt);
+          totalCashReceived = cashRec;
+          totalChangeReturn = changeRet;
+        }
       }
     }
 
     text += `[R]<font size=\'big\'><B>TOTAL: ${symbol}${finalTotal.toFixed(2)}</B></font>\n`;
-    text += "[C]================================================\n";
+    text += "[L]------------------------------------------------\n";
+
+    if (!isCheckout && hasCashPayment) {
+      text += this.formatTwoCols48("<B>Cash Received:</B>", `<B>${symbol}${totalCashReceived.toFixed(2)}</B>`);
+      text += this.formatTwoCols48("<B>Change Return:</B>", `<B>${symbol}${totalChangeReturn.toFixed(2)}</B>`);
+    }
 
     // Print Reward point transaction stats
     if (parseFloat(saleData.rewardPointsEarned) > 0) {

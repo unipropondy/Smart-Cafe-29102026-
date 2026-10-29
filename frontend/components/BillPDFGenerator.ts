@@ -914,8 +914,35 @@ private static escapeHtml(str: string): string {
                <span>${printedRoundOff > 0 ? '+' : ''}${currencySymbol}${printedRoundOff.toFixed(2)}</span>
              </div>
              ` : ''}
+            ${!saleData.isCheckout ? `
+              ${saleData.payments && Array.isArray(saleData.payments) && saleData.payments.length > 0 ? `
+                <div style="border-top: 1px dashed #ccc; margin-top: 2mm; padding-top: 2mm; margin-bottom: 1.5mm;">
+                ${saleData.payments.map((p: any) => {
+                  let mode = String(p.payMode || p.payModeName || p.Remarks || 'Payment').toUpperCase();
+                  if (mode.trim() === "FOC") mode = "FOC (DISCOUNT)";
+                  const isCash = mode === "CASH" || mode === "CAS" || mode.includes("CASH");
+                  const displayLabel = isCash ? "Cash:" : `${mode}:`;
+                  const pAmt = parseFloat(p.amount) || 0;
+                  return `
+                  <div class="payment-row" style="font-size: 10px; font-weight: 700; display: flex; justify-content: space-between;">
+                    <span>${displayLabel}</span>
+                    <span>${currencySymbol}${pAmt.toFixed(2)}</span>
+                  </div>
+                  `;
+                }).join('')}
+                </div>
+              ` : `
+                <div class="payment-row" style="border-top: 1px dashed #ccc; margin-top: 2mm; padding-top: 2mm; font-size: 10px; font-weight: 700; display: flex; justify-content: space-between;">
+                  <span>${(() => {
+                    const m = String(saleData.paymentMethod || 'Cash').toUpperCase();
+                    return (m === 'CASH' || m === 'CAS' || m.includes('CASH')) ? 'Cash:' : `${saleData.paymentMethod || 'Payment'}:`;
+                  })()}</span>
+                  <span>${currencySymbol}${parseFloat(saleData.total || 0).toFixed(2)}</span>
+                </div>
+              `}
+            ` : ''}
             <div class="grand-total">
-              <span>${hasGST ? 'GRAND TOTAL (incl GST):' : 'GRAND TOTAL:'}</span>
+              <span>${hasGST ? 'TOTAL (incl GST):' : 'TOTAL:'}</span>
               <span>${currencySymbol}${finalTotal.toFixed(2)}</span>
             </div>
           </div>
@@ -927,34 +954,38 @@ private static escapeHtml(str: string): string {
                 <span class="payment-label" style="font-size: 14px;">PAYMENT STATUS: PENDING</span>
               </div>
             ` : `
-              ${saleData.payments && Array.isArray(saleData.payments) && saleData.payments.length > 0 ? `
-                <div style="font-weight: bold; border-top: 1px dashed #ccc; margin-top: 2mm; padding-top: 2mm; font-size: 10px; text-align: left; text-transform: uppercase; margin-bottom: 1.5mm;">PAYMENT DETAILS</div>
-                ${saleData.payments.map((p: any) => {
-                  let mode = String(p.payMode || p.payModeName || p.Remarks || 'Payment').toUpperCase();
-                  if (mode.trim() === "FOC") mode = "FOC (DISCOUNT)";
-                  return `
+              ${(() => {
+                const mode = String(saleData.paymentMethod || 'Cash').toUpperCase();
+                const hasCash = (mode === "CASH" || mode === "CAS" || mode.includes("CASH")) ||
+                  (saleData.payments && Array.isArray(saleData.payments) && saleData.payments.some((p: any) => {
+                    const m = String(p.payMode || p.payModeName || p.Remarks || '').toUpperCase();
+                    return m === "CASH" || m === "CAS" || m.includes("CASH");
+                  }));
+                if (!hasCash) return '';
+                const totAmt = parseFloat(saleData.total || 0);
+                const cashRec = (saleData.cashReceived !== undefined && saleData.cashReceived !== null && Number(saleData.cashReceived) > 0)
+                  ? Number(saleData.cashReceived)
+                  : (saleData.cashPaid !== undefined && saleData.cashPaid !== null && Number(saleData.cashPaid) > 0)
+                    ? Number(saleData.cashPaid)
+                    : totAmt;
+                const changeRet = (saleData.changeReturn !== undefined && saleData.changeReturn !== null)
+                  ? Number(saleData.changeReturn)
+                  : (saleData.change !== undefined && saleData.change !== null)
+                    ? Number(saleData.change)
+                    : Math.max(0, cashRec - totAmt);
+                return `
+                <div style="border-top: 1px dashed #ccc; margin-top: 2mm; padding-top: 2mm; margin-bottom: 2mm;">
                   <div class="payment-row" style="font-size: 10px; font-weight: 700; display: flex; justify-content: space-between;">
-                    <span>${mode}</span>
-                    <span>${currencySymbol}${parseFloat(p.amount).toFixed(2)}</span>
+                    <span>Cash Received:</span>
+                    <span>${currencySymbol}${cashRec.toFixed(2)}</span>
                   </div>
-                  `;
-                }).join('')}
-              ` : `
-                <div class="payment-row">
-                  <span>PAYMENT:</span>
-                  <span>${saleData.paymentMethod || 'Cash'}</span>
+                  <div class="payment-row" style="font-size: 10px; font-weight: 700; display: flex; justify-content: space-between;">
+                    <span>Change Return:</span>
+                    <span>${currencySymbol}${changeRet.toFixed(2)}</span>
+                  </div>
                 </div>
-                ${saleData.cashPaid ? `
-                <div class="payment-row">
-                  <span>PAID:</span>
-                  <span>${currencySymbol}${saleData.cashPaid.toFixed(2)}</span>
-                </div>
-                <div class="payment-row">
-                  <span>CHANGE:</span>
-                  <span>${currencySymbol}${(saleData.change || 0).toFixed(2)}</span>
-                </div>
-                ` : ''}
-              `}
+                `;
+              })()}
             `}
             
             <!-- 🏆 Print Reward point transaction stats on PDF Invoice -->

@@ -1884,6 +1884,10 @@ export default function PaymentScreen() {
         mobileNo: loyaltyPhone || null,
         pax: tableState?.pax || null,
         rewardMemberId: rewardMemberId || null,
+        cashPaid: isCashMethod(method) ? paidNum : undefined,
+        cashReceived: isCashMethod(method) ? paidNum : undefined,
+        change: isCashMethod(method) ? change : undefined,
+        changeReturn: isCashMethod(method) ? change : undefined,
       };
 
     try {
@@ -1907,6 +1911,11 @@ export default function PaymentScreen() {
               : paidNum
             ).toFixed(2),
             change: (payments && payments.length > 0 ? 0 : change).toFixed(2),
+            cashReceived: (payments && payments.length > 0
+              ? finalTotalAmount
+              : paidNum
+            ).toFixed(2),
+            changeReturn: (payments && payments.length > 0 ? 0 : change).toFixed(2),
             method: payments && payments.length > 0 ? "SPLIT" : method.trim(),
             payments: payments ? JSON.stringify(payments) : "[]",
             orderId: result.billNo || result.orderId || displayOrderId || "",

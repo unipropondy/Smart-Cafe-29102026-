@@ -37,8 +37,8 @@ export default function PaymentSuccess() {
   const currencySymbol = settings.currencySymbol || "$";
 
   const total = String(params.total ?? "0");
-  const paid = String(params.paidNum ?? "0");
-  const change = String(params.change ?? "0");
+  const paid = String(params.paidNum ?? params.cashReceived ?? "0");
+  const change = String(params.change ?? params.changeReturn ?? "0");
 
   const orderId = String(params.orderId ?? "");
   const tableNo = String(params.tableNo ?? "");
@@ -280,6 +280,8 @@ export default function PaymentSuccess() {
         paymentMethod: isFocPayment ? "FOC" : method,
         cashPaid: parseFloat(paid) || 0,
         change: parseFloat(change) || 0,
+        cashReceived: parseFloat(paid) || 0,
+        changeReturn: parseFloat(change) || 0,
         items: items,
         payments: payments,
         roundOff: parseFloat(roundOff) || 0,
