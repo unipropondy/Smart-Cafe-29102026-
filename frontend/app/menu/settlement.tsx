@@ -616,6 +616,7 @@ export default function SettlementScreen() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const executeDayEnd = async () => {
+    if (loading) return;
     setLoading(true);
     try {
       const res = await API.post("/settlement/day-end", {
@@ -628,10 +629,13 @@ export default function SettlementScreen() {
           require("@react-native-async-storage/async-storage").default;
         await AsyncStorage.removeItem("selected_business_date");
         fetchData();
+        const emailNotice = data.emailStatus?.sent
+          ? `Report emailed to ${data.emailStatus.recipient}`
+          : data.emailStatus?.message || "Report generated and business day closed.";
         showToast({
           type: "success",
           message: "Day Ended Successfully",
-          subtitle: "Report generated and business day closed.",
+          subtitle: emailNotice,
         });
         router.replace("/(tabs)/category"); // Go back to Category
       } else {

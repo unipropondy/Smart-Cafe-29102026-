@@ -46,11 +46,11 @@ Mobile: ${phone}
 Email: ${email}
 ${promoCode ? `Welcome Wallet Credit: Code ${promoCode} (Value: $${promoAmount})` : ""}
 
-Start ordering here: https://pos-v-20-production.up.railway.app/customer
+Start ordering here: https://smart-cafe.up.railway.app/customer
 
 SITARA'S RESTAURANT
 Support: support@unipro.com.sg
-Unsubscribe: https://pos-v-20-production.up.railway.app/customer/unsubscribe
+Unsubscribe: https://smart-cafe.up.railway.app/customer/unsubscribe
     `.trim();
 
     const htmlContent = `
@@ -310,7 +310,7 @@ Unsubscribe: https://pos-v-20-production.up.railway.app/customer/unsubscribe
                     <tr>
                       <td align="center">
                         <!--[if mso]>
-                        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://pos-v-20-production.up.railway.app/customer" style="height:50px;v-text-anchor:middle;width:240px;" arcsize="10%" stroke="f" fillcolor="#FF6A00">
+                        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://smart-cafe.up.railway.app/customer" style="height:50px;v-text-anchor:middle;width:240px;" arcsize="10%" stroke="f" fillcolor="#FF6A00">
                           <w:anchorlock/>
                           <center>
                             <span style="color:#ffffff;font-family:Arial, sans-serif;font-size:15px;font-weight:bold;">Start Ordering →</span>
@@ -318,7 +318,7 @@ Unsubscribe: https://pos-v-20-production.up.railway.app/customer/unsubscribe
                         </v:roundrect>
                         <![endif]-->
                         <!--[if !mso]><!-->
-                        <a href="https://pos-v-20-production.up.railway.app/customer" style="background-color: #FF6A00; color: #FFFFFF; font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; text-decoration: none; padding: 15px 36px; border-radius: 8px; display: inline-block; box-shadow: 0 6px 12px rgba(255, 106, 0, 0.15);">Start Ordering</a>
+                        <a href="https://smart-cafe.up.railway.app/customer" style="background-color: #FF6A00; color: #FFFFFF; font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; text-decoration: none; padding: 15px 36px; border-radius: 8px; display: inline-block; box-shadow: 0 6px 12px rgba(255, 106, 0, 0.15);">Start Ordering</a>
                         <!--<![endif]-->
                       </td>
                     </tr>
@@ -347,9 +347,9 @@ Unsubscribe: https://pos-v-20-production.up.railway.app/customer/unsubscribe
                     </tr>
                     <tr>
                       <td style="font-family: Arial, Helvetica, sans-serif; font-size: 11px;">
-                        <a href="https://pos-v-20-production.up.railway.app/customer/privacy" style="color: #94A3B8; text-decoration: underline;">Privacy Policy</a>
+                        <a href="https://smart-cafe.up.railway.app/customer/privacy" style="color: #94A3B8; text-decoration: underline;">Privacy Policy</a>
                         &nbsp;&bull;&nbsp;
-                        <a href="https://pos-v-20-production.up.railway.app/customer/unsubscribe" style="color: #94A3B8; text-decoration: underline;">Unsubscribe</a>
+                        <a href="https://smart-cafe.up.railway.app/customer/unsubscribe" style="color: #94A3B8; text-decoration: underline;">Unsubscribe</a>
                       </td>
                     </tr>
                   </table>

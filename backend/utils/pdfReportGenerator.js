@@ -297,6 +297,8 @@ const generateSalesReportPdf = async (reportData) => {
     printedOn = "",
     cashierName = "",
     printedBy = "",
+    businessDateDisplay = "",
+    dayEndCompletedAt = "",
     totalSales = 0,
     totalCollections = 0,
     creditPaymentsCollected = 0,
@@ -471,20 +473,40 @@ const generateSalesReportPdf = async (reportData) => {
               body: [
                 [
                   {
-                    text: "Date Range :",
+                    text: "Business Date :",
                     fontSize: 6.5,
                     bold: true,
                     color: T.slate500,
                     border: [false, false, false, false],
                   },
                   {
-                    text: period,
+                    text: businessDateDisplay || period,
                     fontSize: 6.5,
                     bold: true,
                     color: T.slate700,
                     border: [false, false, false, false],
                   },
                 ],
+                ...(dayEndCompletedAt
+                  ? [
+                      [
+                        {
+                          text: "Day End Completed :",
+                          fontSize: 6.5,
+                          bold: true,
+                          color: T.slate500,
+                          border: [false, false, false, false],
+                        },
+                        {
+                          text: dayEndCompletedAt,
+                          fontSize: 6.5,
+                          bold: true,
+                          color: T.orangeDark,
+                          border: [false, false, false, false],
+                        },
+                      ],
+                    ]
+                  : []),
                 [
                   {
                     text: "Sales View :",
@@ -1993,7 +2015,7 @@ const generateSalesReportPdf = async (reportData) => {
     footer: (currentPage, pageCount) => ({
       columns: [
         {
-          text: `Report Period: ${period}   |   Printed: ${printedOn || new Date().toLocaleString()}`,
+          text: `Business Date: ${businessDateDisplay || period}   |   ${dayEndCompletedAt ? `Day End: ${dayEndCompletedAt}   |   ` : ""}Generated: ${printedOn || new Date().toLocaleString()}`,
           fontSize: 6.5,
           color: T.slate500,
           margin: [28, 10, 0, 0],

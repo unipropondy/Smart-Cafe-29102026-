@@ -2023,7 +2023,7 @@ export default function PaymentScreen() {
       if (match && match[1]) {
         const host = match[1];
         if (host.includes("railway") || host.includes("production")) {
-          return "https://pos-v-20-production.up.railway.app/customer-display";
+          return "https://smart-cafe.up.railway.app/customer-display";
 
         }
         return `http://${host}:8081/customer-display`;

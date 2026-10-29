@@ -155,6 +155,7 @@ export default function DayEndScreen() {
   };
 
   const executeDayEnd = async () => {
+    if (loading) return;
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/settlement/day-end`, {
@@ -168,8 +169,11 @@ export default function DayEndScreen() {
       if (res.ok && data.success) {
         // Clear selected business date from AsyncStorage to reset
         await AsyncStorage.removeItem("selected_business_date");
+        const successMsg = data.emailStatus?.sent
+          ? `Day ended successfully. Report emailed to ${data.emailStatus.recipient}.`
+          : `Day ended successfully. ${data.emailStatus?.message || "Report generated."}`;
         if (Platform.OS === 'web') {
-          alert("Day ended successfully. Report generated.");
+          alert(successMsg);
           router.replace("/(tabs)/category"); // Go back to Category
         } else {
           Alert.alert("Success", "Day ended successfully. Report generated.", [

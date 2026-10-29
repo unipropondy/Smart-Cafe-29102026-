@@ -29,7 +29,7 @@ export let API_URL: string =
   (globalThis as any).process?.env?.EXPO_PUBLIC_API_URL ??
   (isDev
     ? `http://${getLocalBackendIP()}:3000`
-    : 'https://pos-v-20-production.up.railway.app');
+    : 'https://smart-cafe.up.railway.app');
 
 export const setApiUrl = (url: string) => {
   API_URL = url;

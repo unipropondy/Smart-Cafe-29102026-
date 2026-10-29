@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getPool, sql } = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
+const { sendDayEndSalesReportEmail } = require('../utils/dayEndEmailService');
 let processDayEndBonusCalculations;
 try {
   processDayEndBonusCalculations = require('./artistBonus').processDayEndBonusCalculations;
@@ -80,7 +81,7 @@ router.post("/day-start", async (req, res) => {
 
 router.post("/day-end", async (req, res) => {
   try {
-    const pool = getPool();
+    const pool = req.pool || getPool();
 
     // Fetch active start date before deleting DateEntry
     const activeDayRes = await pool.request().query("SELECT TOP 1 StartDate FROM DateEntry ORDER BY CreatedDate DESC");
@@ -89,7 +90,11 @@ router.post("/day-end", async (req, res) => {
       activeStartDate = req.body.businessDate;
     }
 
-    const actionUser = req.body?.username || 'admin';
+    const businessDateStr = activeStartDate instanceof Date
+      ? activeStartDate.toISOString().split("T")[0]
+      : (activeStartDate ? String(activeStartDate).split("T")[0] : null);
+
+    const actionUser = req.body?.username || req.user?.userName || 'admin';
 
     // Log Day End in BusinessDayLog (using Singapore time UTC+8)
     if (activeStartDate) {
@@ -127,20 +132,112 @@ router.post("/day-end", async (req, res) => {
       console.error('[DayEnd] Artist bonus finalization error (non-fatal):', bonusErr.message);
     }
 
-    // 2. Clear active business day — this officially ends the day
+    // 2. Clear active business day — this officially ends and commits the day
     await pool.request().query("DELETE FROM DateEntry");
 
     // Notify all connected clients to refresh settlement data
     const io = req.app.get('io');
     if (io) io.emit('settlement_updated', { action: 'day_ended' });
 
+    // 3. Trigger automatic Sales Report email to the owner configured in Shop Settings (Report Email)
+    // Non-blocking: executed ONLY AFTER settlement is successfully committed.
+    let emailStatus = null;
+    if (businessDateStr) {
+      try {
+        emailStatus = await sendDayEndSalesReportEmail({
+          pool,
+          businessDateStr,
+          user: actionUser,
+          databaseName: req.databaseName,
+          companyCode: req.companyCode,
+          forceRetry: false,
+        });
+        console.log(`[DayEnd] Sales report email status for ${businessDateStr}:`, emailStatus);
+      } catch (mailErr) {
+        console.error(`[DayEnd] Email delivery encountered an unexpected error for ${businessDateStr}:`, mailErr.message);
+        emailStatus = {
+          sent: false,
+          error: mailErr.message,
+          canRetry: true,
+          message: `Settlement completed, but sales report email delivery failed: ${mailErr.message}`,
+        };
+      }
+    } else {
+      console.warn("[DayEnd] No active business date identified to email sales report.");
+      emailStatus = {
+        sent: false,
+        skipped: true,
+        reason: "NO_BUSINESS_DATE",
+        message: "No active business date found for the sales report.",
+      };
+    }
+
     res.json({
       success: true,
       message: "Day ended successfully",
+      businessDate: businessDateStr,
       bonusFinalization: bonusResult,
+      emailStatus,
     });
   } catch (err) {
     console.error("Day End Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint to safely retry sending the Day End Sales Report email
+router.post("/retry-day-end-email", async (req, res) => {
+  try {
+    const pool = req.pool || getPool();
+    let targetDateStr = req.body?.businessDate;
+
+    if (!targetDateStr) {
+      // Fallback to most recent ended business day from BusinessDayLog
+      const lastEndedRes = await pool.request().query("SELECT TOP 1 BusinessDate FROM BusinessDayLog WHERE EndedAt IS NOT NULL ORDER BY BusinessDate DESC");
+      if (lastEndedRes.recordset.length > 0 && lastEndedRes.recordset[0].BusinessDate) {
+        const d = lastEndedRes.recordset[0].BusinessDate;
+        targetDateStr = d instanceof Date ? d.toISOString().split("T")[0] : String(d).split("T")[0];
+      }
+    }
+
+    if (!targetDateStr) {
+      return res.status(400).json({
+        success: false,
+        error: "Business date is required or no settled business day was found.",
+      });
+    }
+
+    const actionUser = req.body?.username || req.user?.userName || "admin";
+    const emailResult = await sendDayEndSalesReportEmail({
+      pool,
+      businessDateStr: targetDateStr,
+      user: actionUser,
+      databaseName: req.databaseName,
+      companyCode: req.companyCode,
+      forceRetry: true, // Manual retry forces resend
+    });
+
+    if (emailResult.sent) {
+      res.json({
+        success: true,
+        message: emailResult.message || "Sales report email resent successfully",
+        emailStatus: emailResult,
+      });
+    } else if (emailResult.skipped) {
+      res.status(400).json({
+        success: false,
+        error: emailResult.message || "Email skipped",
+        emailStatus: emailResult,
+      });
+    } else {
+      res.status(502).json({
+        success: false,
+        error: emailResult.error || "Email delivery failed",
+        emailStatus: emailResult,
+      });
+    }
+  } catch (err) {
+    console.error("Retry Day End Email Error:", err);
     res.status(500).json({ error: err.message });
   }
 });

@@ -11,14 +11,14 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://pos-v-20-production.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://smart-cafe.up.railway.app"
 
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://pos-v-20-production.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://smart-cafe.up.railway.app"
 
       },
       "android": {

@@ -549,6 +549,8 @@ export default function SummaryScreen() {
     (tableState as any)?.CustomerName ||
     "";
 
+  const hasCustomer = Boolean(effectiveCustomerName && effectiveCustomerName.trim() !== "" && effectiveCustomerName.toLowerCase() !== "guest");
+
   // QR Session Matcher for same-device web testing (if toggle is ON)
   useEffect(() => {
     if (!showLoyalty) return; // Skip auto-selection when toggle is OFF
@@ -1894,7 +1896,7 @@ export default function SummaryScreen() {
                       </Text>
                     </View>
                   )}
-                  {effectiveCustomerName && effectiveCustomerName.toLowerCase() !== "guest" && (
+                  {hasCustomer && (
                     <View style={[styles.tableBadge, { backgroundColor: "#FFF7ED", borderColor: "#F97316", borderWidth: 1, flexDirection: "row", alignItems: "center", gap: 4 }]}>
                       <Ionicons name="person" size={12} color="#EA580C" />
                       <Text style={[styles.tableBadgeText, { color: "#EA580C", fontFamily: Fonts.bold }]}>
@@ -1971,7 +1973,7 @@ export default function SummaryScreen() {
                         </Text>
                       </View>
                     )}
-                    {effectiveCustomerName && effectiveCustomerName.toLowerCase() !== "guest" && (
+                    {hasCustomer && (
                       <View style={[styles.tableBadge, { backgroundColor: "#FFF7ED", borderColor: "#F97316", borderWidth: 1, flexDirection: "row", alignItems: "center", gap: 4 }]}>
                         <Ionicons name="person" size={12} color="#EA580C" />
                         <Text style={[styles.tableBadgeText, { color: "#EA580C", fontFamily: Fonts.bold }]}>
@@ -2405,7 +2407,7 @@ export default function SummaryScreen() {
                 })()}
 
                 {/* 👤 CUSTOMER INFO DISPLAY (for guest / QR / non-member diners) */}
-                {!loyaltyCustomer && !rewardMember && effectiveCustomerName && effectiveCustomerName.toLowerCase() !== "guest" && (
+                {!loyaltyCustomer && !rewardMember && hasCustomer && (
                   <View
                     style={{
                       backgroundColor: "#FFF7ED",

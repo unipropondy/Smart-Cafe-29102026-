@@ -23,7 +23,7 @@ const normalizePayMode = (paymentMethod = "CASH") => {
  * Fetch and compute full sales report data for a given date range
  */
 async function fetchFullReportData(startDateStr, endDateStr, pool, cashierFilter = null) {
-  const companySettings = await getCompanySettings();
+  const companySettings = await getCompanySettings(pool);
   
   const sgtStart = `CAST('${startDateStr}' AS DATE)`;
   const sgtEnd = `DATEADD(DAY, 1, CAST('${endDateStr}' AS DATE))`;

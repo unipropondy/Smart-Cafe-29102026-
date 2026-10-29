@@ -101,7 +101,7 @@ const defaultConfig: BridgeConfig = {
   backends: [
     {
       name: 'RN POS',
-      url: 'https://pos-v-20-production.up.railway.app',
+      url: 'https://smart-cafe.up.railway.app',
       enabled: true
     },
     {
@@ -125,7 +125,7 @@ function loadConfig(): BridgeConfig {
 
     // Backward compatibility conversion:
     if (!parsed.backends || !Array.isArray(parsed.backends)) {
-      const url = parsed.apiUrl || parsed.backendUrl || 'https://pos-v-20-production.up.railway.app';
+      const url = parsed.apiUrl || parsed.backendUrl || 'https://smart-cafe.up.railway.app';
       parsed.backends = [
         {
           name: 'Default',
