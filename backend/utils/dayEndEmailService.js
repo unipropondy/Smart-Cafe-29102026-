@@ -318,7 +318,58 @@ async function sendDayEndSalesReportEmail({
     // 2. Ensure log table exists
     await ensureDayEndEmailLogTable(pool);
 
-    // 3. Database idempotency check: check if already sent
+    // 3. Query actual settlement completion timestamp from BusinessDayLog
+    let bDayEndedAt = null;
+    let dayEndCompletedAt = null;
+    let businessDateDisplay = null;
+    try {
+      const bDayRes = await pool
+        .request()
+        .input("businessDate", sql.Date, cleanDateStr)
+        .query(`
+          SELECT TOP 1 
+            BusinessDate,
+            FORMAT(CAST(BusinessDate AS DATE), 'dd-MMM-yyyy') AS FormattedBusinessDate,
+            EndedAt,
+            FORMAT(EndedAt, 'dd-MMM-yyyy hh:mm tt') AS FormattedEndedAt,
+            EndedBy
+          FROM BusinessDayLog 
+          WHERE BusinessDate = @businessDate
+        `);
+
+      if (bDayRes.recordset.length > 0) {
+        businessDateDisplay = bDayRes.recordset[0].FormattedBusinessDate;
+        dayEndCompletedAt = bDayRes.recordset[0].FormattedEndedAt;
+        bDayEndedAt = bDayRes.recordset[0].EndedAt;
+      }
+    } catch (bErr) {
+      console.warn("[DayEndEmail] Could not query BusinessDayLog formatted times:", bErr.message);
+    }
+
+    // Fallback for Day End timestamp from BusinessDayAuditLog if not found in BusinessDayLog
+    if (!dayEndCompletedAt) {
+      try {
+        const auditTimeRes = await pool
+          .request()
+          .input("businessDate", sql.Date, cleanDateStr)
+          .query(`
+            SELECT TOP 1 
+              EventTime,
+              FORMAT(EventTime, 'dd-MMM-yyyy hh:mm tt') AS FormattedEventTime
+            FROM BusinessDayAuditLog
+            WHERE BusinessDate = @businessDate AND EventType = 'DAY_END'
+            ORDER BY EventTime DESC
+          `);
+        if (auditTimeRes.recordset.length > 0) {
+          dayEndCompletedAt = auditTimeRes.recordset[0].FormattedEventTime;
+          if (!bDayEndedAt) bDayEndedAt = auditTimeRes.recordset[0].EventTime;
+        }
+      } catch (auditErr) {
+        console.warn("[DayEndEmail] Could not query BusinessDayAuditLog for Day End timestamp:", auditErr.message);
+      }
+    }
+
+    // 4. Database idempotency check: check if already sent for THIS settlement
     if (!forceRetry) {
       const existingRes = await pool
         .request()
@@ -332,20 +383,28 @@ async function sendDayEndSalesReportEmail({
       if (existingRes.recordset.length > 0) {
         const row = existingRes.recordset[0];
         if (row.Status === "SENT") {
-          console.log(`[DayEndEmail] Report already sent for ${dbKey} on ${cleanDateStr} to ${row.RecipientEmail} at ${row.SentAt}`);
-          return {
-            sent: false,
-            skipped: true,
-            reason: "ALREADY_SENT",
-            recipient: row.RecipientEmail,
-            sentAt: row.SentAt,
-            message: `Report was already sent to ${row.RecipientEmail}`,
-          };
+          const sentTime = row.SentAt ? new Date(row.SentAt).getTime() : 0;
+          const endedTime = bDayEndedAt ? new Date(bDayEndedAt).getTime() : 0;
+
+          // If the email was sent AFTER or AT current settlement completion, skip sending to avoid duplicate
+          if (!endedTime || sentTime >= (endedTime - 10000)) {
+            console.log(`[DayEndEmail] Report already sent for ${dbKey} on ${cleanDateStr} to ${row.RecipientEmail} at ${row.SentAt}`);
+            return {
+              sent: false,
+              skipped: true,
+              reason: "ALREADY_SENT",
+              recipient: row.RecipientEmail,
+              sentAt: row.SentAt,
+              message: `Report was already sent to ${row.RecipientEmail}`,
+            };
+          } else {
+            console.log(`[DayEndEmail] Prior email was sent at ${row.SentAt}, prior to recent Day End at ${bDayEndedAt}. Re-sending updated report...`);
+          }
         }
       }
     }
 
-    // 4. Retrieve Report Email dynamically from CompanySettings in current tenant database
+    // 5. Retrieve Report Email dynamically from CompanySettings in current tenant database
     let settingsResult = await pool.request().query(`
       SELECT TOP 1 
         Id, CompanyName, Address, Phone, Email, ReportEmail, Currency, CurrencySymbol, BusinessTimezone 
@@ -370,53 +429,6 @@ async function sendDayEndSalesReportEmail({
     const companySettings = settingsResult.recordset[0] || {};
     const rawReportEmail = (companySettings.ReportEmail || "").trim();
     const outletTimezone = companySettings.BusinessTimezone || "Asia/Singapore";
-
-    // 5. Query actual settlement completion timestamp from the database
-    let dayEndCompletedAt = null;
-    let businessDateDisplay = null;
-    try {
-      const bDayRes = await pool
-        .request()
-        .input("businessDate", sql.Date, cleanDateStr)
-        .query(`
-          SELECT TOP 1 
-            BusinessDate,
-            FORMAT(CAST(BusinessDate AS DATE), 'dd-MMM-yyyy') AS FormattedBusinessDate,
-            EndedAt,
-            FORMAT(EndedAt, 'dd-MMM-yyyy hh:mm tt') AS FormattedEndedAt,
-            EndedBy
-          FROM BusinessDayLog 
-          WHERE BusinessDate = @businessDate
-        `);
-
-      if (bDayRes.recordset.length > 0) {
-        businessDateDisplay = bDayRes.recordset[0].FormattedBusinessDate;
-        dayEndCompletedAt = bDayRes.recordset[0].FormattedEndedAt;
-      }
-    } catch (bErr) {
-      console.warn("[DayEndEmail] Could not query BusinessDayLog formatted times:", bErr.message);
-    }
-
-    // Fallback for Day End timestamp from BusinessDayAuditLog if not found in BusinessDayLog
-    if (!dayEndCompletedAt) {
-      try {
-        const auditTimeRes = await pool
-          .request()
-          .input("businessDate", sql.Date, cleanDateStr)
-          .query(`
-            SELECT TOP 1 
-              FORMAT(EventTime, 'dd-MMM-yyyy hh:mm tt') AS FormattedEventTime
-            FROM BusinessDayAuditLog
-            WHERE BusinessDate = @businessDate AND EventType = 'DAY_END'
-            ORDER BY EventTime DESC
-          `);
-        if (auditTimeRes.recordset.length > 0) {
-          dayEndCompletedAt = auditTimeRes.recordset[0].FormattedEventTime;
-        }
-      } catch (auditErr) {
-        console.warn("[DayEndEmail] Could not query BusinessDayAuditLog for Day End timestamp:", auditErr.message);
-      }
-    }
 
     // Report generation timestamp from SQL Server matching the database business time
     let reportGeneratedAt = null;
