@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Smart POS",
+    "slug": "pos-1",
+    "version": "5.0.0",
+    "orientation": "default",
+    "icon": "./frontend/assets/images/logo_pos.png",
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./frontend/assets/images/logo_pos.png"
+      },
+      "package": "com.unipro.smart_cafe",
+      "versionCode": 5
+    },
+    "extra": {
+    },
+    "owner": "unipro"
+  }
+}

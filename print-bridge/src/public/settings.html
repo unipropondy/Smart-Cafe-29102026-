@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniPro Print Bridge — Settings</title>
+  <meta name="description" content="Admin configuration dashboard for UniPro Print Bridge">
+  <link rel="stylesheet" href="/settings.css">
+</head>
+<body>
+
+<!-- ─── Toast Container ────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ─── Top Bar ───────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-icon">🖨️</div>
+    <div>
+      <div class="topbar-title">UniPro Print Bridge</div>
+      <div class="topbar-subtitle" id="app-version">v1.0.0 · Settings</div>
+    </div>
+  </div>
+  <div class="topbar-pills">
+    <span class="pill" id="pill-version">
+      <span class="dot"></span>
+      <span id="pill-version-text">—</span>
+    </span>
+    <span class="pill" id="pill-connection">
+      <span class="dot"></span>
+      <span id="pill-connection-text">Connecting…</span>
+    </span>
+    <span class="pill" id="pill-bridge">
+      <span class="dot"></span>
+      <span id="pill-bridge-text">Bridge —</span>
+    </span>
+  </div>
+</header>
+
+<!-- ─── Layout ────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showSection('general')" id="nav-general">
+        <span class="nav-icon">⚙️</span> General
+      </button>
+      <button class="nav-item" onclick="showSection('backends')" id="nav-backends">
+        <span class="nav-icon">🔗</span> Backends
+      </button>
+      <div class="nav-divider"></div>
+      <button class="nav-item" onclick="showSection('status')" id="nav-status">
+        <span class="nav-icon">📊</span> Bridge Status
+      </button>
+      <button class="nav-item" onclick="showSection('diagnostics')" id="nav-diagnostics">
+        <span class="nav-icon">🔬</span> Diagnostics
+      </button>
+      <div class="nav-divider"></div>
+      <button class="nav-item" onclick="showSection('logs')" id="nav-logs">
+        <span class="nav-icon">📋</span> Logs
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- ════════════════════════════════════════
+         SECTION 1 · General Settings
+    ═════════════════════════════════════════════ -->
+    <section class="section active" id="section-general">
+      <div class="section-header">
+        <div>
+          <div class="section-title">General Settings</div>
+          <div class="section-desc">Core configuration for the Print Bridge service</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="card-icon">🏪</span> Store &amp; Authentication</div>
+        <form id="generalForm" onsubmit="saveGeneralConfig(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="storeId">Store ID</label>
+              <input type="text" id="storeId" placeholder="STORE_001" required>
+            </div>
+            <div class="form-group">
+              <label for="bridgeToken">Bridge Token</label>
+              <input type="text" id="bridgeToken" placeholder="unipro-bridge-token-…" required>
+            </div>
+            <div class="form-group">
+              <label for="pollIntervalMs">Polling Interval (ms)</label>
+              <input type="number" id="pollIntervalMs" min="500" max="60000" step="100" placeholder="2000" required>
+            </div>
+            <div class="form-group">
+              <label for="port">Bridge Port</label>
+              <input type="number" id="port" min="1024" max="65535" placeholder="3050" required>
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="card-title" style="margin-top:0;"><span class="card-icon">🖥️</span> Customer Display Settings</div>
+          <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;">
+            <div class="toggle-row">
+              <label class="toggle">
+                <input type="checkbox" id="customerDisplayEnabled">
+                <span class="toggle-slider"></span>
+              </label>
+              <div>
+                <div class="toggle-label">Enable Customer Display</div>
+                <div class="toggle-hint">Launches the secondary screen display for customer visibility</div>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <label class="toggle">
+                <input type="checkbox" id="customerDisplayFullscreen">
+                <span class="toggle-slider"></span>
+              </label>
+              <div>
+                <div class="toggle-label">Fullscreen Mode</div>
+                <div class="toggle-hint">Display runs in fullscreen on the secondary monitor</div>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <label class="toggle">
+                <input type="checkbox" id="customerDisplayAutoRecovery">
+                <span class="toggle-slider"></span>
+              </label>
+              <div>
+                <div class="toggle-label">Auto Recovery</div>
+                <div class="toggle-hint">Automatically relaunch display if disconnected or closed</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="btn-group">
+            <button type="submit" class="btn btn-primary" id="saveGeneralBtn">
+              <span class="spinner"></span>
+              <span class="btn-text">💾 Save Configuration</span>
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="loadConfig()">
+              ↺ Reset
+            </button>
+          </div>
+
+          <div id="generalSaveAlert" style="display:none; margin-top:14px;"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         SECTION 2 · Railway Backends
+    ═════════════════════════════════════════════ -->
+    <section class="section" id="section-backends">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Railway Backends</div>
+          <div class="section-desc">Manage POS backend servers. Changes take effect immediately.</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal()">
+          ＋ Add Backend
+        </button>
+      </div>
+
+      <div id="backends-container">
+        <div class="backends-grid" id="backendsList"></div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         SECTION 3 · Bridge Status
+    ═════════════════════════════════════════════ -->
+    <section class="section" id="section-status">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Live Bridge Status</div>
+          <div class="section-desc">Real-time health and runtime information</div>
+        </div>
+        <span id="status-refresh-badge" class="badge neutral">Auto-refresh 5s</span>
+      </div>
+
+      <div class="stats-grid" id="statsGrid">
+        <!-- filled by JS -->
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="card-icon">ℹ️</span> Runtime Information</div>
+        <table class="info-table" id="runtimeTable">
+          <!-- filled by JS -->
+        </table>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         SECTION 4 · Diagnostics
+    ═════════════════════════════════════════════ -->
+    <section class="section" id="section-diagnostics">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Printer Diagnostics</div>
+          <div class="section-desc">Hardware connectivity and printer status</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-warning btn-sm" onclick="reconnectPrinter()">🔄 Reconnect</button>
+          <button class="btn btn-secondary btn-sm" onclick="refreshDiagnostics()">↺ Refresh</button>
+        </div>
+      </div>
+
+      <div class="diag-grid" id="diagGrid">
+        <!-- filled by JS -->
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="card-icon">🖨️</span> Printer Details</div>
+        <table class="info-table" id="printerTable">
+          <!-- filled by JS -->
+        </table>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         SECTION 5 · Logs
+    ═════════════════════════════════════════════ -->
+    <section class="section" id="section-logs">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Application Logs</div>
+          <div class="section-desc">Latest 100 entries · Auto-refreshes every 3 seconds</div>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 20px;">
+        <div class="log-controls">
+          <div class="btn-group">
+            <button class="btn btn-secondary btn-sm" onclick="downloadLogs()">⬇ Download</button>
+            <button class="btn btn-secondary btn-sm" onclick="clearLogView()">🗑 Clear View</button>
+            <label class="toggle-row" style="gap:8px; padding:0; cursor:pointer;">
+              <label class="toggle" style="margin:0;">
+                <input type="checkbox" id="logAutoScroll" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <span style="font-size:12px; color:var(--text-2);">Auto-scroll</span>
+            </label>
+          </div>
+          <span id="log-count" style="font-size:12px; color:var(--text-3);">—</span>
+        </div>
+        <div id="log-output"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ─── Add / Edit Backend Modal ──────────────────────────── -->
+<div id="backendModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Add Backend</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <form id="backendForm" onsubmit="handleBackendSubmit(event)">
+      <input type="hidden" id="editIndex">
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label for="backendName">Backend Name</label>
+        <input type="text" id="backendName" placeholder="e.g. RN POS" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label for="backendUrl">Backend Server URL</label>
+        <input type="url" id="backendUrl" placeholder="https://…up.railway.app" required>
+      </div>
+
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="backendEnabled" checked>
+          <span class="toggle-slider"></span>
+        </label>
+        <div>
+          <div class="toggle-label">Enable this backend</div>
+          <div class="toggle-hint">Disabled backends are skipped during polling</div>
+        </div>
+      </div>
+
+      <div id="modal-error" style="display:none; margin-top:14px;"></div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="modalSubmitBtn">
+          <span class="spinner"></span>
+          <span class="btn-text">Save Backend</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/settings.js"></script>
+</body>
+</html>

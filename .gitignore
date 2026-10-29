@@ -1,0 +1,88 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+
+# =========================
+# Expo
+# =========================
+.expo/
+.expo-shared/
+frontend/dist/
+!backend/dist/
+web-build/
+expo-env.d.ts
+
+# =========================
+# EAS Build
+# =========================
+.eas/
+
+# =========================
+# Native (managed workflow)
+# =========================
+/android
+/ios
+.kotlin/
+
+# =========================
+# Environment files (IMPORTANT)
+# =========================
+.env
+.env.*
+
+# =========================
+# Certificates / Keys (sensitive)
+# =========================
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# =========================
+# Metro / React Native
+# =========================
+.metro-health-check*
+
+# =========================
+# Debug logs
+# =========================
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# =========================
+# macOS
+# =========================
+.DS_Store
+
+# =========================
+# TypeScript
+# =========================
+*.tsbuildinfo
+
+# =========================
+# Backend Logs
+# =========================
+backend/logs/
+backend/error_log.txt
+
+UCS_PONDY/
+
+# =========================
+# Large Binary Files / APKs
+# =========================
+*.apk
+frontend/public/download/
+
+# =========================
+# Print Bridge Builds
+# =========================
+print-bridge/out/
+print-bridge/customer-display-web/
+print-bridge/dist/
+print-bridge/dist-installer/
+print-bridge/logs/
+packages/customer-display/node_modules/

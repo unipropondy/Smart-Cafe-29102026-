@@ -1,0 +1,54 @@
+{
+  "name": "unipro-print-bridge",
+  "version": "1.0.0",
+  "description": "Standalone LAN/Wi-Fi Print Bridge with Integrated Dual Monitor Customer Display",
+  "author": "UniPro",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && xcopy /E /I /Y src\\public dist\\public && copy /Y src\\RawPrint.exe dist\\RawPrint.exe",
+    "start": "electron .",
+    "dev": "npm run build && electron .",
+    "package": "npm run build && electron-builder --win --x64"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.2"
+  },
+  "build": {
+    "appId": "com.unipro.printbridge",
+    "productName": "UniPro Print Bridge",
+    "directories": {
+      "output": "dist-installer"
+    },
+    "files": [
+      "dist/**/*",
+      "customer-display-web/**/*",
+      "config.json"
+    ],
+    "extraResources": [
+      {
+        "from": "customer-display-web",
+        "to": "customer-display-web"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

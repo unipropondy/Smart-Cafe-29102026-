@@ -1,0 +1,23 @@
+{
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^3.0.2",
+    "@react-native-community/datetimepicker": "^9.1.0",
+    "expo": "^55.0.15",
+    "expo-font": "^56.0.5",
+    "expo-router": "^56.2.8",
+    "expo-splash-screen": "^56.0.10",
+    "expo-web-browser": "^56.0.5",
+    "react": "19.2.0",
+    "react-native": "0.83.4",
+    "react-native-safe-area-context": "~5.6.2"
+  },
+  "name": "POS-1",
+  "version": "5.0.0",
+  "scripts": {
+    "build": "node scripts/build-all.js"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.10",
+    "typescript": "~5.9.2"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "storeId": "STORE_001",
+  "bridgeToken": "unipro-pos-bridge-token-2026",
+  "pollIntervalMs": 500,
+  "port": 3050,
+  "backends": [
+    {
+      "name": "RN POS",
+      "url": "https://pos-v-20-production.up.railway.app",
+      "enabled": true
+    },
+    {
+      "name": "QR POS",
+      "url": "https://online-qr-production.up.railway.app",
+      "enabled": true
+    }
+  ],
+  "customerDisplay": {
+    "enabled": true,
+    "fullscreen": true,
+    "autoRecovery": true
+  }
+}
